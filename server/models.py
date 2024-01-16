@@ -26,10 +26,11 @@ class Planet(db.Model, SerializerMixin):
     nearest_star = db.Column(db.String)
 
     # Add relationship
-    missions = db.relationship('Mission', backref='planet', cascade='all, delete-orphan')
-
+    missions = db.relationship("Mission", back_populates="planet", cascade="all, delete-orphan")
+    scientists = association_proxy('missions', 'scientist')
+    
     # Add serialization rules
-    serialize_rules = ('-missions.planet', '-scientists.planets')
+    serialize_rules = ("-missions",)
 
 
 class Scientist(db.Model, SerializerMixin):
@@ -40,10 +41,11 @@ class Scientist(db.Model, SerializerMixin):
     field_of_study = db.Column(db.String)
 
     # Add relationship
-    missions = db.relationship('Mission', backref='scientist', cascade='all, delete-orphan')
+    missions = db.relationship("Mission", back_populates="scientist", cascade="all, delete-orphan")
+    planets = association_proxy('missions', 'planet')
 
     # Add serialization rules
-    serialize_rules = ('-missions.scientist', '-planets.scientists')
+    serialize_rules = ("-missions",)
 
     # Add validation
 # must have a name, and a field_of_study
@@ -65,13 +67,15 @@ class Mission(db.Model, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-
-    # Add relationships
     planet_id = db.Column(db.Integer, db.ForeignKey('planets.id'))
     scientist_id = db.Column(db.Integer, db.ForeignKey('scientists.id'))
 
+    # Add relationships
+    planet = db.relationship("Planet", back_populates="missions")
+    scientist = db.relationship("Scientist", back_populates="missions")
+
     # Add serialization rules
-    serialize_rules = ('-scientist.missions', '-planet.missions')
+    serialize_rules = ("-scientist","-planet")
 
     # Add validation
 # must have a name, a scientist_id and a planet_id
